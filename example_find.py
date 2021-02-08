@@ -1,56 +1,64 @@
 import sys
 from io import BytesIO
 from get_spn import get_spn
-# Этот класс поможет нам сделать картинку из потока байт
-
 import requests
 from PIL import Image
 
 
-# Пусть наше приложение предполагает запуск:
-# python search.py Москва, ул. Ак. Королева, 12
-# Тогда запрос к геокодеру формируется следующим образом:
-toponym_to_find = " ".join(sys.argv[1:])
+def open_image(json_response):
+    toponym = json_response["response"]["GeoObjectCollection"][
+        "featureMember"][0]["GeoObject"]
+    # Координаты центра топонима:
+    toponym_coodrinates = toponym["Point"]["pos"]
+    # Долгота и широта:
+    toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
 
-geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
+    spn_longitude, spn_lattitude = get_spn(json_response)
 
-geocoder_params = {
-    "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
-    "geocode": toponym_to_find,
-    "format": "json"
-}
+    # Собираем параметры для запроса к StaticMapsAPI:
+    map_params = {
+        "ll": ",".join([toponym_longitude, toponym_lattitude]),
+        "spn": ",".join([spn_longitude, spn_lattitude]),
+        "l": "map",
+        'pt': ",".join([toponym_longitude, toponym_lattitude, 'pm2dol'])
+    }
 
-response = requests.get(geocoder_api_server, params=geocoder_params)
+    map_api_server = "http://static-maps.yandex.ru/1.x/"
+    # ... и выполняем запрос
+    response = requests.get(map_api_server, params=map_params)
 
-if not response:
-    # обработка ошибочной ситуации
-    pass
+    Image.open(BytesIO(
+        response.content)).show()
+    # Создадим картинку
+    # и тут же ее покажем встроенным просмотрщиком операционной системы
 
-# Преобразуем ответ в json-объект
-json_response = response.json()
-# Получаем первый топоним из ответа геокодера.
-toponym = json_response["response"]["GeoObjectCollection"][
-    "featureMember"][0]["GeoObject"]
-# Координаты центра топонима:
-toponym_coodrinates = toponym["Point"]["pos"]
-# Долгота и широта:
-toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
 
-spn_longitude, spn_lattitude = get_spn(json_response)
+def find_by_toponym(toponym_to_find, adding_params=None):
+    geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
 
-# Собираем параметры для запроса к StaticMapsAPI:
-map_params = {
-    "ll": ",".join([toponym_longitude, toponym_lattitude]),
-    "spn": ",".join([spn_longitude, spn_lattitude]),
-    "l": "map",
-    'pt': ",".join([toponym_longitude, toponym_lattitude, 'pm2dol'])
-}
+    geocoder_params = {
+        "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
+        "geocode": toponym_to_find,
+        "format": "json"
+    }
+    geocoder_params.update(adding_params if adding_params else dict())
 
-map_api_server = "http://static-maps.yandex.ru/1.x/"
-# ... и выполняем запрос
-response = requests.get(map_api_server, params=map_params)
+    response = requests.get(geocoder_api_server, params=geocoder_params)
 
-Image.open(BytesIO(
-    response.content)).show()
-# Создадим картинку
-# и тут же ее покажем встроенным просмотрщиком операционной системы
+    if not response:
+        # обработка ошибочной ситуации
+        pass
+
+    # Преобразуем ответ в json-объект
+    return response.json()
+    # Получаем первый топоним из ответа геокодера.
+
+
+if __name__ == '__main__':
+    # Пусть наше приложение предполагает запуск:
+    # python search.py Москва, ул. Ак. Королева, 12
+    # Тогда запрос к геокодеру формируется следующим образом:
+    toponym_to_find = " ".join(sys.argv[1:])
+
+    json_response = find_by_toponym(toponym_to_find)
+    open_image(json_response)
