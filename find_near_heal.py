@@ -29,4 +29,6 @@ if __name__ == '__main__':
     toponym_to_find = " ".join(sys.argv[1:])
     json_response = find_by_toponym(toponym_to_find)
 
-    heal_response = find_near_heal(get_ll(json_response))
+    heal_response = find_near_heal(get_ll(json_response)).json()
+    toponym_to_find = heal_response['features'][0]['properties']['CompanyMetaData']['address']
+    open_image(find_by_toponym(toponym_to_find))

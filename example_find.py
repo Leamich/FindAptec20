@@ -33,7 +33,7 @@ def open_image(json_response):
     # и тут же ее покажем встроенным просмотрщиком операционной системы
 
 
-def find_by_toponym(toponym_to_find, adding_params=None):
+def find_by_toponym(toponym_to_find):
     geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
 
     geocoder_params = {
@@ -41,7 +41,6 @@ def find_by_toponym(toponym_to_find, adding_params=None):
         "geocode": toponym_to_find,
         "format": "json"
     }
-    geocoder_params.update(adding_params if adding_params else dict())
 
     response = requests.get(geocoder_api_server, params=geocoder_params)
 
