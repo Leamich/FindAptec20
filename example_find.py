@@ -1,11 +1,11 @@
 import sys
 from io import BytesIO
-from get_spn import get_spn
+from get_spn import get_spn, get_spn_extended
 import requests
 from PIL import Image
 
 
-def open_image(json_response):
+def open_image(json_response, adding_points=None, spn=None):
     toponym = json_response["response"]["GeoObjectCollection"][
         "featureMember"][0]["GeoObject"]
     # Координаты центра топонима:
@@ -13,7 +13,10 @@ def open_image(json_response):
     # Долгота и широта:
     toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
 
-    spn_longitude, spn_lattitude = get_spn(json_response)
+    if spn is None:
+        spn_longitude, spn_lattitude = get_spn(json_response)
+    else:
+        spn_longitude, spn_lattitude = spn
 
     # Собираем параметры для запроса к StaticMapsAPI:
     map_params = {
@@ -22,6 +25,9 @@ def open_image(json_response):
         "l": "map",
         'pt': ",".join([toponym_longitude, toponym_lattitude, 'pm2dol'])
     }
+
+    if adding_points:
+        map_params['pt'] = '~'.join(adding_points)
 
     map_api_server = "http://static-maps.yandex.ru/1.x/"
     # ... и выполняем запрос

@@ -6,3 +6,11 @@ def get_spn(envelope):
     longitude = abs(lower_corner1 - upper_corner1)
     lattitude = abs(lower_corner2 - upper_corner2)
     return str(longitude), str(lattitude)
+
+
+def get_spn_extended(points):
+    lower_corner1, lower_corner2 = points[0]
+    upper_corner1, upper_corner2 = points[1]
+    longitude = abs(lower_corner1 - upper_corner1)
+    lattitude = abs(lower_corner2 - upper_corner2)
+    return str(longitude), str(lattitude)
